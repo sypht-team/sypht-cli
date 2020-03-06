@@ -14,7 +14,7 @@ type flags struct {
 	recursive  bool
 	workflowID string
 	uploadRate int
-	nRoutines int
+	nRoutines  int
 }
 
 var client *sypht.Client
@@ -23,10 +23,8 @@ var cliFlags = flags{
 	recursive:  true,
 	workflowID: "process",
 	uploadRate: 1,
-	nRoutines : 5,
+	nRoutines:  2,
 }
-
-const nRoutines = 2
 
 func initFunc() {
 	var err error
@@ -85,11 +83,12 @@ func main() {
 						Destination: &cliFlags.recursive,
 					},
 					&cli.IntFlag{
-						Name : "nRoutines",
-						Value : 5,
-						Usage : "Number of go routines running at same time",
-						Destination: &cliFlags.recursive,
-					}
+						Name:        "nRoutines",
+						Value:       2,
+						Usage:       "Number of go routines running at same time",
+						Destination: &cliFlags.nRoutines,
+						Hidden:      true,
+					},
 				},
 			},
 		},
