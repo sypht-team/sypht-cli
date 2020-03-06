@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sypht-team/sypht-golang-client"
 )
 
 var metaFileLock sync.Mutex
@@ -74,8 +76,8 @@ func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) 
 	return paths, errChan
 }
 
-func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResult, rate int) {
-	ticker := time.NewTicker(time.Second / time.Duration(rate))
+func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResult) {
+	ticker := time.NewTicker(time.Second / time.Duration(cliFlags.uploadRate))
 	for path := range paths {
 		result := &uploadResult{}
 		ok := validateFile(path)
@@ -87,8 +89,8 @@ func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResul
 			if _, ok = resp["code"]; ok {
 				result = &uploadResult{
 					Path:   path,
-					Status: resp["code"].(string),
-					Error:  resp["message"].(string),
+					Status: "FAILED",
+					Error:  resp["code"].(string),
 				}
 			}
 		} else {
@@ -134,9 +136,30 @@ func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResul
 }
 
 func uploadFile(path string) (resp map[string]interface{}, err error) {
-	resp, err = client.Upload(path, []string{}, cliFlags.workflowID)
+	resp, err = client.Upload(path, []string{
+		sypht.Invoice,
+	}, cliFlags.workflowID)
 	if err != nil {
 		log.Printf("Error uploading file %s , %v", path, err)
+	}
+	return
+}
+
+func initCSV(path string) {
+	csvPath := filepath.Join(path, "sypht.csv")
+	exist := true
+	if _, err := os.Stat(csvPath); os.IsNotExist(err) {
+		exist = false
+	}
+	metaFile, err := os.OpenFile(csvPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("Error creating meta file , %v", err)
+	}
+	defer metaFile.Close()
+
+	csvWriter = csv.NewWriter(metaFile)
+	if !exist {
+		csvWriter.Write([]string{"FileId", "Path", "Status", "UploadedAt", "Error", "Checksum"})
 	}
 	return
 }
