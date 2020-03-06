@@ -17,7 +17,6 @@ func watch(path string, ctx *cli.Context) error {
 	if _, err := os.Stat(csvPath); os.IsNotExist(err) {
 		exist = false
 	}
-	fmt.Printf("csv exists? %v", exist)
 	metaFile, err := os.OpenFile(csvPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("Error creating meta file , %v", err)

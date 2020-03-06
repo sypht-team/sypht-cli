@@ -14,8 +14,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/sypht-team/sypht-golang-client"
 )
 
 var metaFileLock sync.Mutex
@@ -136,10 +134,7 @@ func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResul
 }
 
 func uploadFile(path string) (resp map[string]interface{}, err error) {
-	resp, err = client.Upload(path, []string{
-		sypht.Invoice,
-		sypht.Document,
-	}, cliFlags.workflowID)
+	resp, err = client.Upload(path, []string{}, cliFlags.workflowID)
 	if err != nil {
 		log.Printf("Error uploading file %s , %v", path, err)
 	}
