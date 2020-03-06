@@ -26,6 +26,7 @@ type uploadResult struct {
 	Path       string `json:"path"`
 	UploadedAt string `json:"uploadedAt"`
 	Status     string `json:"status"`
+	Error      string `json:"error"`
 }
 
 func extractFileInfo(path string) (base, ext string) {
@@ -36,8 +37,17 @@ func extractFileInfo(path string) (base, ext string) {
 
 func validateFile(path string) (ok bool) {
 	exts := map[string]interface{}{".pdf": nil, ".png": nil, ".jpg": nil, ".jpeg": nil, ".tiff": nil, ".tif": nil, ".gif": nil}
-	_, fileExt := extractFileInfo(path)
+	base, fileExt := extractFileInfo(path)
+
 	_, ok = exts[fileExt]
+	if !ok {
+		return
+	}
+	if _, err := os.Stat(base + ".json"); os.IsNotExist(err) {
+		ok = true
+	} else {
+		ok = false
+	}
 	return
 }
 
@@ -69,25 +79,36 @@ func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) 
 func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResult, rate int) {
 	ticker := time.NewTicker(time.Second / time.Duration(rate))
 	for path := range paths {
+		result := &uploadResult{}
 		ok := validateFile(path)
 		if !ok {
 			continue
 		}
 		resp, _ := uploadFile(path)
-		result := uploadResult{
-			FileID:     resp["fileId"].(string),
-			Path:       path,
-			UploadedAt: resp["uploadedAt"].(string),
-			Status:     resp["status"].(string),
+		if _, ok = resp["message"]; ok {
+			if _, ok = resp["code"]; ok {
+				result = &uploadResult{
+					Path:   path,
+					Status: resp["code"].(string),
+					Error:  resp["message"].(string),
+				}
+			}
+		} else {
+			result = &uploadResult{
+				FileID:     resp["fileId"].(string),
+				Path:       path,
+				UploadedAt: resp["uploadedAt"].(string),
+				Status:     resp["status"].(string),
+			}
 		}
 
 		select {
 		case _ = <-ticker.C:
-			c <- result
+			c <- *result
 			base, _ := extractFileInfo(path)
 			f, err := os.Create(fmt.Sprintf("%s.json", base))
 			if err != nil {
-				log.Panicf("Error creating result file path %s, msg %v", path, err)
+				fmt.Printf("Error creating result file path %s, msg %v", path, err)
 			}
 			defer f.Close()
 
@@ -106,9 +127,9 @@ func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResul
 				errStr = err.Error()
 			}
 			csvWriter.Write([]string{result.FileID, result.Path, result.Status, result.UploadedAt, errStr, hex.EncodeToString(checksum[:])})
-			csvWriter.Flush()
 			metaFileLock.Unlock()
 		case <-done:
+			ticker.Stop()
 			return
 		}
 	}
@@ -118,7 +139,7 @@ func uploadFile(path string) (resp map[string]interface{}, err error) {
 	resp, err = client.Upload(path, []string{
 		sypht.Invoice,
 		sypht.Document,
-	})
+	}, cliFlags.workflowID)
 	if err != nil {
 		log.Printf("Error uploading file %s , %v", path, err)
 	}
