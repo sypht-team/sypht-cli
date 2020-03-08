@@ -29,6 +29,8 @@ type uploadResult struct {
 	Error      string `json:"error"`
 }
 
+const UploadStatusFAILED = "FAILED"
+
 func extractFileInfo(path string) (base, ext string) {
 	ext = strings.ToLower(filepath.Ext(path))
 	base = path[0 : len(path)-len(ext)]
@@ -51,54 +53,107 @@ func validateFile(path string) (ok bool) {
 	return
 }
 
-func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) {
-	paths := make(chan string)
+func walkDirs(done <-chan struct{}, root string) (<-chan string, <-chan error) {
+	dirs := make(chan string)
 	errChan := make(chan error, 1)
 	go func() {
-		// Close the paths channel after Walk returns.
-		defer close(paths)
+		// Close the dirs channel after Walk returns.
+		defer close(dirs)
 		// No select needed for this send, since errChan is buffered.
 		errChan <- filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			if !info.Mode().IsRegular() {
+			if !info.IsDir() {
 				return nil
 			}
 			select {
-			case paths <- path:
+			case dirs <- path:
 			case <-done:
 				return errors.New("walk canceled")
 			}
 			return nil
 		})
 	}()
+	return dirs, errChan
+}
+
+func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) {
+	paths := make(chan string)
+	errChan := make(chan error, 1)
+	if cliFlags.recursive {
+		go func() {
+			// Close the paths channel after Walk returns.
+			defer close(paths)
+			// No select needed for this send, since errChan is buffered.
+			errChan <- filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.Mode().IsRegular() {
+					return nil
+				}
+				select {
+				case paths <- path:
+				case <-done:
+					return errors.New("walk canceled")
+				}
+				return nil
+			})
+		}()
+	} else {
+		go func() {
+			defer close(paths)
+			// Close the paths channel after reading dirs.
+			files, err := ioutil.ReadDir(root)
+			if err != nil {
+				errChan <- err
+			}
+			for _, file := range files {
+				select {
+				default:
+					if file.Mode().IsRegular() && !file.IsDir() {
+						paths <- file.Name()
+					}
+				case <-done:
+					errChan <- errors.New("Scan canceled")
+				}
+			}
+			errChan <- nil
+		}()
+	}
+
 	return paths, errChan
 }
 
 func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResult) {
 	ticker := time.NewTicker(time.Second / time.Duration(cliFlags.uploadRate))
 	for path := range paths {
-		result := &uploadResult{}
+		var result *uploadResult
 		ok := validateFile(path)
 		if !ok {
 			continue
 		}
-		resp, _ := uploadFile(path)
-		if _, ok = resp["message"]; ok {
-			if _, ok = resp["code"]; ok {
-				result = &uploadResult{
-					Path:   path,
-					Status: "FAILED",
-					Error:  resp["code"].(string),
-				}
+		resp, err := uploadFile(path)
+		if err != nil {
+			result = &uploadResult{
+				Path:   path,
+				Status: UploadStatusFAILED,
+				Error:  err.Error(),
 			}
 		} else {
+			var status string
+			if resp.Status != "" {
+				status = resp.Status
+			} else {
+				status = UploadStatusFAILED
+			}
 			result = &uploadResult{
-				FileID:     resp["fileId"].(string),
+				FileID:     resp.FileID,
 				Path:       path,
-				UploadedAt: resp["uploadedAt"].(string),
-				Status:     resp["status"].(string),
+				UploadedAt: resp.UploadedAt,
+				Status:     status,
+				Error:      resp.Code,
 			}
 		}
 
@@ -127,6 +182,7 @@ func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResul
 				errStr = err.Error()
 			}
 			csvWriter.Write([]string{result.FileID, result.Path, result.Status, result.UploadedAt, errStr, hex.EncodeToString(checksum[:])})
+			csvWriter.Flush()
 			metaFileLock.Unlock()
 		case <-done:
 			ticker.Stop()
@@ -135,31 +191,10 @@ func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResul
 	}
 }
 
-func uploadFile(path string) (resp map[string]interface{}, err error) {
-	resp, err = client.Upload(path, []string{
-		sypht.Invoice,
-	}, cliFlags.workflowID)
+func uploadFile(path string) (resp sypht.UploadResponse, err error) {
+	resp, err = client.Upload(path, []string{}, cliFlags.workflowID)
 	if err != nil {
 		log.Printf("Error uploading file %s , %v", path, err)
-	}
-	return
-}
-
-func initCSV(path string) {
-	csvPath := filepath.Join(path, "sypht.csv")
-	exist := true
-	if _, err := os.Stat(csvPath); os.IsNotExist(err) {
-		exist = false
-	}
-	metaFile, err := os.OpenFile(csvPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("Error creating meta file , %v", err)
-	}
-	defer metaFile.Close()
-
-	csvWriter = csv.NewWriter(metaFile)
-	if !exist {
-		csvWriter.Write([]string{"FileId", "Path", "Status", "UploadedAt", "Error", "Checksum"})
 	}
 	return
 }

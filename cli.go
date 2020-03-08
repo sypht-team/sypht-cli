@@ -19,14 +19,10 @@ type flags struct {
 
 var client *sypht.Client
 var currentDir string
-var cliFlags = flags{
-	recursive:  true,
-	workflowID: "process",
-	uploadRate: 1,
-	nThreads:   1,
-}
+var cliFlags *flags
 
 func initFunc() {
+	cliFlags = &flags{}
 	var err error
 	currentDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -48,8 +44,8 @@ func main() {
 		Commands: []*cli.Command{
 			{
 				Name:        "scan",
-				Usage:       "sypht-cli scan [directory] [OPTIONS]",
-				UsageText:   "sypht-cli scan [directory] [OPTIONS]",
+				Usage:       "sypht-cli scan [OPTIONS] [directory]",
+				UsageText:   "sypht-cli scan [OPTIONS] [directory]",
 				Description: "Scan and upload all documents in a directory to Sypht's API.",
 				ArgsUsage:   "Full path of the directory to scan",
 				Action: func(ctx *cli.Context) error {
@@ -73,19 +69,19 @@ func main() {
 						Name:        "rate-limit",
 						Aliases:     []string{"r"},
 						Value:       1,
-						Usage:       "Upload number of files per second",
+						Usage:       "Number of files to upload per second",
 						Destination: &cliFlags.uploadRate,
 					},
 					&cli.BoolFlag{
 						Name:        "recursive",
 						Aliases:     []string{"R"},
-						Value:       true,
+						Value:       false,
 						Usage:       "Recursively scan files in subdirectories",
 						Destination: &cliFlags.recursive,
 					},
 					&cli.IntFlag{
 						Name:        "nThreads",
-						Value:       2,
+						Value:       1,
 						Usage:       "Number of go routines running at same time",
 						Destination: &cliFlags.nThreads,
 						Hidden:      true,
@@ -94,8 +90,8 @@ func main() {
 			},
 			{
 				Name:        "watch",
-				Usage:       "sypht-cli watch [directory] [OPTIONS]",
-				UsageText:   "sypht-cli watch [directory] [OPTIONS]",
+				Usage:       "sypht-cli watch [OPTIONS] [directory]",
+				UsageText:   "sypht-cli watch [OPTIONS] [directory]",
 				Description: "Watch and upload all documents in a directory to Sypht's API.",
 				ArgsUsage:   "Full path of the directory to watch",
 				Action: func(ctx *cli.Context) error {
@@ -119,12 +115,19 @@ func main() {
 						Name:        "rate-limit",
 						Aliases:     []string{"r"},
 						Value:       1,
-						Usage:       "Upload number of files per second",
+						Usage:       "Number of files to upload per second",
 						Destination: &cliFlags.uploadRate,
+					},
+					&cli.BoolFlag{
+						Name:        "recursive",
+						Aliases:     []string{"R"},
+						Value:       true,
+						Usage:       "Recursively watch files in subdirectories",
+						Destination: &cliFlags.recursive,
 					},
 					&cli.IntFlag{
 						Name:        "nThreads",
-						Value:       2,
+						Value:       1,
 						Usage:       "Number of go routines running at same time",
 						Destination: &cliFlags.nThreads,
 						Hidden:      true,
