@@ -67,7 +67,6 @@ func main() {
 					},
 					&cli.IntFlag{
 						Name:        "rate-limit",
-						Aliases:     []string{"r"},
 						Value:       1,
 						Usage:       "Number of files to upload per second",
 						Destination: &cliFlags.uploadRate,
@@ -113,7 +112,6 @@ func main() {
 					},
 					&cli.IntFlag{
 						Name:        "rate-limit",
-						Aliases:     []string{"r"},
 						Value:       1,
 						Usage:       "Number of files to upload per second",
 						Destination: &cliFlags.uploadRate,

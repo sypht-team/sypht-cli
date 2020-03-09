@@ -13,10 +13,14 @@ import (
 )
 
 func printContext(path string, ctx *cli.Context) {
-	fmt.Printf("Running Sypht-cli with command %s, directory : %v, recursively : %v, upload rate : %v doc(s)/second.", ctx.Command.Name, path, cliFlags.recursive, cliFlags.uploadRate)
+	fmt.Printf("Running Sypht-cli with command %s, directory : %v, recursively : %v, upload rate : %v doc(s)/second", ctx.Command.Name, path, cliFlags.recursive, cliFlags.uploadRate)
+	fmt.Println()
 }
 
 func watch(path string, ctx *cli.Context) error {
+	if cliFlags.nThreads == 1 {
+		cliFlags.nThreads = cliFlags.uploadRate
+	}
 	printContext(path, ctx)
 	csvPath := filepath.Join(path, "sypht.csv")
 	exist := true
@@ -109,6 +113,9 @@ func watch(path string, ctx *cli.Context) error {
 }
 
 func scan(path string, ctx *cli.Context) error {
+	if cliFlags.nThreads == 1 {
+		cliFlags.nThreads = cliFlags.uploadRate
+	}
 	printContext(path, ctx)
 	csvPath := filepath.Join(path, "sypht.csv")
 	exist := true
