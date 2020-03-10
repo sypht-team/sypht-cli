@@ -1,0 +1,23 @@
+language: go
+
+go:
+  - 1.13
+  - tip
+
+os:
+  - linux
+
+git:
+  depth: 1
+
+before_install:
+  - go get -u
+
+script:
+  - cd $TRAVIS_BUILD_DIR
+  - ./build.sh
+
+notifications:
+  email: false
+
+
