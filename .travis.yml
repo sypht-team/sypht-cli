@@ -21,8 +21,7 @@ notifications:
 
 deploy:
   provider: releases
-  api_key:
-    secure: $RELEASE_API_KEY
+  api_key: $RELEASE_API_KEY
   file: build/assets.zip
   skip_cleanup: true
   on:
