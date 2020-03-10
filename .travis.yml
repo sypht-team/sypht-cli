@@ -2,7 +2,6 @@ language: go
 
 go:
   - 1.13
-  - tip
 
 os:
   - linux
@@ -20,4 +19,11 @@ script:
 notifications:
   email: false
 
-
+deploy:
+  provider: releases
+  api_key:
+    secure: $RELEASE_API_KEY
+  file: build/assets.zip
+  skip_cleanup: true
+  on:
+    tags: true
