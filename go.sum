@@ -13,6 +13,12 @@ github.com/sypht-team/sypht-golang-client v0.0.0-20200307005047-6ce406fdf89d h1:
 github.com/sypht-team/sypht-golang-client v0.0.0-20200307005047-6ce406fdf89d/go.mod h1:/PLtbjrB6rvjupUyeu6J14gvDRw5lt7exOF0P3vd4NY=
 github.com/sypht-team/sypht-golang-client v0.0.0-20200309004008-ad49102f623b h1:h7o84QY7F9fpBkqzDVJovI73EwFdJw9k2gYzAgNcixI=
 github.com/sypht-team/sypht-golang-client v0.0.0-20200309004008-ad49102f623b/go.mod h1:/PLtbjrB6rvjupUyeu6J14gvDRw5lt7exOF0P3vd4NY=
+github.com/sypht-team/sypht-golang-client v0.0.0-20200309035815-00650829aa9a h1:Qyy8z3qLqO36W8KHR13Srmk7A6b84xeNe/0ZJdPETVs=
+github.com/sypht-team/sypht-golang-client v0.0.0-20200309035815-00650829aa9a/go.mod h1:/PLtbjrB6rvjupUyeu6J14gvDRw5lt7exOF0P3vd4NY=
+github.com/sypht-team/sypht-golang-client v0.0.0-20200310013353-3aecc47cbdb5 h1:AZmtov94XXXtFLzUePTVvFv/o1vb/gGfuf/qf2bwwKc=
+github.com/sypht-team/sypht-golang-client v0.0.0-20200310013353-3aecc47cbdb5/go.mod h1:/PLtbjrB6rvjupUyeu6J14gvDRw5lt7exOF0P3vd4NY=
+github.com/sypht-team/sypht-golang-client v0.0.0-20200310013802-9865e82aedaf h1:xOWvE5uNgfJEJdYcfI1qFxWLxNqu96WeheZePMhG8Sw=
+github.com/sypht-team/sypht-golang-client v0.0.0-20200310013802-9865e82aedaf/go.mod h1:/PLtbjrB6rvjupUyeu6J14gvDRw5lt7exOF0P3vd4NY=
 github.com/urfave/cli/v2 v2.1.1 h1:Qt8FeAtxE/vfdrLmR3rxR6JRE0RoVmbXu8+6kZtYU4k=
 github.com/urfave/cli/v2 v2.1.1/go.mod h1:SE9GqnLQmjVa0iPEY0f1w3ygNIYcIJ0OKPMoW2caLfQ=
 golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 h1:uYVVQ9WP/Ds2ROhcaGPeIdVq0RIXVLwsHlnvJ+cT1So=

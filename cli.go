@@ -18,13 +18,11 @@ type flags struct {
 }
 
 var client *sypht.Client
-var currentDir string
 var cliFlags *flags
 
 func initFunc() {
 	cliFlags = &flags{}
-	var err error
-	currentDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+	currentDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +52,12 @@ func main() {
 						dir = ctx.Args().Get(0)
 						return scan(dir, ctx)
 					}
-					return nil
+					currentDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+					if err != nil {
+						log.Fatalf("Unknown error : %v", err)
+						return nil
+					}
+					return scan(currentDir, ctx)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -91,7 +94,7 @@ func main() {
 				Name:        "watch",
 				Usage:       "sypht-cli watch [OPTIONS] [directory]",
 				UsageText:   "sypht-cli watch [OPTIONS] [directory]",
-				Description: "Watch and upload all documents in a directory to Sypht's API.",
+				Description: "Watch and upload all newly added documents in a directory to Sypht's API.",
 				ArgsUsage:   "Full path of the directory to watch",
 				Action: func(ctx *cli.Context) error {
 					var dir string
@@ -99,7 +102,12 @@ func main() {
 						dir = ctx.Args().Get(0)
 						return watch(dir, ctx)
 					}
-					return nil
+					currentDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+					if err != nil {
+						log.Fatalf("Unknown error : %v", err)
+						return nil
+					}
+					return watch(currentDir, ctx)
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/urfave/cli/v2"
@@ -88,10 +89,12 @@ func watch(path string, ctx *cli.Context) error {
 	c := make(chan uploadResult)
 	var wg sync.WaitGroup
 
+	ticker := time.NewTicker(time.Second / time.Duration(cliFlags.uploadRate))
+	defer ticker.Stop()
 	wg.Add(cliFlags.nThreads)
 	for i := 0; i < cliFlags.nThreads; i++ {
 		go func() {
-			processFile(processDone, paths, c)
+			processFile(processDone, paths, c, ticker.C)
 			wg.Done()
 		}()
 	}
@@ -140,11 +143,13 @@ func scan(path string, ctx *cli.Context) error {
 	// Start a fixed number of goroutines to read and process files.
 	c := make(chan uploadResult)
 	var wg sync.WaitGroup
+	ticker := time.NewTicker(time.Second / time.Duration(cliFlags.uploadRate))
+	defer ticker.Stop()
 
 	wg.Add(cliFlags.nThreads)
 	for i := 0; i < cliFlags.nThreads; i++ {
 		go func() {
-			processFile(done, paths, c)
+			processFile(done, paths, c, ticker.C)
 			wg.Done()
 		}()
 	}

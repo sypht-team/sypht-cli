@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -126,75 +125,89 @@ func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) 
 	return paths, errChan
 }
 
-func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResult) {
-	ticker := time.NewTicker(time.Second / time.Duration(cliFlags.uploadRate))
-	for path := range paths {
-		var result *uploadResult
-		ok := validateFile(path)
-		if !ok {
-			continue
-		}
-		resp, err := uploadFile(path)
-		if err != nil {
-			result = &uploadResult{
-				Path:   path,
-				Status: UploadStatusFAILED,
-				Error:  err.Error(),
+func processFile(done <-chan struct{}, paths <-chan string, c chan<- uploadResult, tickerChan <-chan time.Time) {
+	select {
+	case _ = <-tickerChan:
+		for path := range paths {
+			var result *uploadResult
+			ok := validateFile(path)
+			if !ok {
+				continue
 			}
-		} else {
-			var status string
-			if resp.Status != "" {
-				status = resp.Status
+			resp, err := uploadFileWithRetry(path, 10)
+			if err != nil {
+				fmt.Printf("Error uploading file path %s, msg %v", path, err)
+				result = &uploadResult{
+					Path:   path,
+					Status: UploadStatusFAILED,
+					Error:  err.Error(),
+				}
 			} else {
-				status = UploadStatusFAILED
+				var status string
+				if resp.Status != "" {
+					status = resp.Status
+				} else {
+					status = UploadStatusFAILED
+				}
+				result = &uploadResult{
+					FileID:     resp.FileID,
+					Path:       path,
+					UploadedAt: resp.UploadedAt,
+					Status:     status,
+					Error:      resp.Code,
+				}
 			}
-			result = &uploadResult{
-				FileID:     resp.FileID,
-				Path:       path,
-				UploadedAt: resp.UploadedAt,
-				Status:     status,
-				Error:      resp.Code,
-			}
-		}
 
-		select {
-		case _ = <-ticker.C:
-			c <- *result
-			base, _ := extractFileInfo(path)
-			f, err := os.Create(fmt.Sprintf("%s.json", base))
-			if err != nil {
-				fmt.Printf("Error creating result file path %s, msg %v", path, err)
-			}
-			defer f.Close()
+			select {
+			case c <- *result:
+				base, _ := extractFileInfo(path)
+				f, err := os.Create(fmt.Sprintf("%s.json", base))
+				if err != nil {
+					fmt.Printf("Error creating result file path %s, msg %v", path, err)
+				}
+				if f != nil {
+					resultJSON, _ := json.Marshal(result)
+					f.Write(resultJSON)
+					f.Close()
+				}
 
-			resultJSON, _ := json.Marshal(result)
-			f.Write(resultJSON)
+				data, err := readFileWithRetry(path, 10)
+				if err != nil {
+					fmt.Printf("Error reading file after retry path %s, msg %v", path, err)
+				}
+				checksum := md5.Sum(data)
 
-			data, err := ioutil.ReadFile(path)
-			if err != nil {
-				fmt.Printf("Error reading file path %s, msg %v", path, err)
+				metaFileLock.Lock()
+				var errStr string
+				if err != nil {
+					errStr = err.Error()
+				}
+				csvWriter.Write([]string{result.FileID, result.Path, result.Status, result.UploadedAt, errStr, hex.EncodeToString(checksum[:])})
+				csvWriter.Flush()
+				metaFileLock.Unlock()
+			case <-done:
+				return
 			}
-			checksum := md5.Sum(data)
-
-			metaFileLock.Lock()
-			var errStr string
-			if err != nil {
-				errStr = err.Error()
-			}
-			csvWriter.Write([]string{result.FileID, result.Path, result.Status, result.UploadedAt, errStr, hex.EncodeToString(checksum[:])})
-			csvWriter.Flush()
-			metaFileLock.Unlock()
-		case <-done:
-			ticker.Stop()
-			return
 		}
 	}
 }
 
-func uploadFile(path string) (resp sypht.UploadResponse, err error) {
+func readFileWithRetry(path string, times int) (data []byte, err error) {
+	data, err = ioutil.ReadFile(path)
+	for err != nil && times > 0 {
+		time.Sleep(time.Second)
+		times--
+		data, err = ioutil.ReadFile(path)
+	}
+	return
+}
+
+func uploadFileWithRetry(path string, times int) (resp sypht.UploadResponse, err error) {
 	resp, err = client.Upload(path, []string{}, cliFlags.workflowID)
-	if err != nil {
-		log.Printf("Error uploading file %s , %v", path, err)
+	for err != nil && times > 0 {
+		time.Sleep(time.Second)
+		times--
+		resp, err = client.Upload(path, []string{}, cliFlags.workflowID)
 	}
 	return
 }
