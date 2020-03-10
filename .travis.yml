@@ -21,7 +21,8 @@ notifications:
 
 deploy:
   provider: releases
-  api_key: $RELEASE_API_KEY
+  api_key: 
+    secure: secure: "m+P0oh8d5A/IKe1pWe/bMQGzU7L2iEQN7yaqB6Mhq35L3hP3ww0S/F+cwmE6NIQV6W7A2Qkl1oRBj/UrMyNEeCHx84as3399aKaY9/J613+OkkOHgxxkyawMUDBpsUdVhO+qg9fpmNcOYY8tiokC7LIHrwZSMPIB7SBw1GYadviAJJAXD054cx8vDQzOkvwA8cOC9PVAdQoL1p6U58aVfYONbeFj/tmRNINMPjtlonNY36421JA6Uh4GeJknvc/lxYRKmxkPr2Xl2OqK8yigE+iyQIJPTA23M1OU5q20H/XjsYhVsDDCZGRySsEoYxYwUmiSSgchxT8PjG5HorbOXJ7rxtO0yXUghDVwBuGr17iff5UVK/abtp39ZPH0ZnmXaqAvcq28uG3EAFjX0/NQgh4+AWjALjfB2Ie8a+AjGg9xQlimQ2PncWFrvij6BLkrkOGyCIUKYADd4EPJv8+OLOJB96XV1pamXE363VPao9FmqAH5BRHsOvHf46QJX3AYZQttp97mYbvnRLcRXSGyB1SrnJI5e8Av5yGyv922B4KjfWK/6RVxaSAL6OTPkwTnbGJDg2x/s2DUCyKbInwSKTBwhnutMBFEmtpoaD66ZQr+Wh4POs2DBB0VVDupA8tuNgh9iwzGeK4/GyRdeSwRdNlwg57vWnnU5Td0RdYLc50="
   file: build/assets.zip
   skip_cleanup: true
   on:
