@@ -22,7 +22,10 @@ notifications:
 deploy:
   provider: releases
   api_key: $RELEASE_API_KEY
-  file: build/assets.zip
+  file:
+    - build/sypht-cli-darwin-amd64.zip
+    - build/sypht-cli-windows-386.zip
+    - build/sypht-cli-windows-amd64.zip
   skip_cleanup: true
   on:
     tags: true
