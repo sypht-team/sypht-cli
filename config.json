@@ -1,4 +1,4 @@
 {
-    "ClientID" : "REPLACE WITH YOUR CLIENT ID",
-    "ClientSecret" : "REPLACE WITH YOUR CLIENT SECRET"
+    "ClientID" : "...",
+    "ClientSecret" : "..."
 }

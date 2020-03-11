@@ -127,7 +127,7 @@ func main() {
 					&cli.BoolFlag{
 						Name:        "recursive",
 						Aliases:     []string{"R"},
-						Value:       true,
+						Value:       false,
 						Usage:       "Recursively watch files in subdirectories",
 						Destination: &cliFlags.recursive,
 					},
