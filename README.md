@@ -52,7 +52,7 @@ If [directory] is omitted, current directory is used by default.
 ## Running on Windows Operating System
 Run Command Prompt as administrator, navigate to the folder where `sypht-cli.exe` and `config.json` live.
 ```cmd
-start sypht-cli.exe scan --rate-limit 2 -recursive C:\Users\Administrator\Desktop\
+start sypht-cli.exe scan --rate-limit 2 --recursive C:\Users\Administrator\Desktop\
 ```
 This command will do a recursive scan of directory `C:\Users\Administrator\Desktop\` and it's subdirectories with a rate of 2 documents per second, and upload all valid documents to Sypht API.
 
