@@ -15,7 +15,7 @@ For enterprise users please contact us for more details.
 
 Navigate to our github [release page](https://github.com/sypht-team/sypht-cli/releases) to download Sypht-cli that suits your operating system.
 
-Extract the assets.zip file and edit config.json to use your `client_id` and `client_secret`:
+Extract the zip file and edit config.json to use your `client_id` and `client_secret`:
 ```Bash
 {
     "ClientID" : "82uEDuQ...",
