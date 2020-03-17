@@ -112,7 +112,7 @@ func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) 
 				select {
 				default:
 					if file.Mode().IsRegular() && !file.IsDir() {
-						paths <- file.Name()
+						paths <- filepath.Join(root, file.Name())
 					}
 				case <-done:
 					errChan <- errors.New("Scan canceled")
